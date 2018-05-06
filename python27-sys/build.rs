@@ -333,10 +333,17 @@ fn configure_from_path(expected_version: &PythonVersion) -> Result<String, Strin
     let ld_version: &str = &lines[2];
     let exec_prefix: &str = &lines[3];
 // ~~~~~~~~~~ generated file, modify `python3-sys/build.rs` ~~~~~~~~~~
+    let mut enable_shared = enable_shared == "1";
+// ~~~~~~~~~~ generated file, modify `python3-sys/build.rs` ~~~~~~~~~~
+    // Allow an environment variable to force static linking.
+    if env::var_os("PYTHON_STATIC").is_some() {
+        enable_shared = false;
+    }
+// ~~~~~~~~~~ generated file, modify `python3-sys/build.rs` ~~~~~~~~~~
     let is_extension_module = env::var_os("CARGO_FEATURE_EXTENSION_MODULE").is_some();
     if !is_extension_module || cfg!(target_os="windows") {
         println!("{}", get_rustc_link_lib(&interpreter_version,
-            ld_version, enable_shared == "1").unwrap());
+            ld_version, enable_shared).unwrap());
         if libpath != "None" {
             println!("cargo:rustc-link-search=native={}", libpath);
         } else if cfg!(target_os="windows") {
@@ -373,8 +380,8 @@ fn version_from_env() -> Result<PythonVersion, String> {
     vars.sort_by(|a, b| b.cmp(a));
     for (key, _) in vars {
         match re.captures(&key) {
-            Some(cap) => return Ok(PythonVersion { 
-                major: cap.at(1).unwrap().parse().unwrap(), 
+            Some(cap) => return Ok(PythonVersion {
+                major: cap.at(1).unwrap().parse().unwrap(),
                 minor: match cap.at(3) {
                     Some(s) => Some(s.parse().unwrap()),
                     None => None
